@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/geocoding_service.dart';
+import '../services/route_service.dart';
 
 import '../services/location_service.dart';
 
@@ -24,6 +25,10 @@ class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   Position? currentPosition;
   LatLng? destinationPosition;
+
+  List<LatLng> routePoints = [];
+
+  final RouteService _routeService = RouteService();
   bool isLoading = true;
   String error = "";
 
@@ -42,10 +47,19 @@ class _MapPageState extends State<MapPage> {
       LatLng? destination = await _geocodingService.getCoordinates(
         widget.destination,
       );
+      List<LatLng> route = [];
+
+      if (destination != null) {
+        route = await _routeService.getRoute(
+          LatLng(position.latitude, position.longitude),
+          destination,
+        );
+      }
 
       setState(() {
         currentPosition = position;
         destinationPosition = destination;
+        routePoints = route;
         isLoading = false;
       });
 
@@ -121,42 +135,27 @@ class _MapPageState extends State<MapPage> {
                 initialZoom: 15,
               ),
               children: [
+
                 TileLayer(
-                  urlTemplate:
-                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName:
-                  'com.example.routetales_web',
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.routetales_web',
                 ),
+
+                // Draw Route
+                if (routePoints.isNotEmpty)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: routePoints,
+                        strokeWidth: 5,
+                        color: Colors.blue,
+                      ),
+                    ],
+                  ),
 
                 MarkerLayer(
                   markers: [
-                    // Current Location
-                    Marker(
-                      point: LatLng(
-                        currentPosition!.latitude,
-                        currentPosition!.longitude,
-                      ),
-                      width: 80,
-                      height: 80,
-                      child: const Icon(
-                        Icons.location_pin,
-                        color: Colors.red,
-                        size: 45,
-                      ),
-                    ),
-
-                    // Destination
-                    if (destinationPosition != null)
-                      Marker(
-                        point: destinationPosition!,
-                        width: 80,
-                        height: 80,
-                        child: const Icon(
-                          Icons.flag,
-                          color: Colors.green,
-                          size: 40,
-                        ),
-                      ),
+                    // your current marker code
                   ],
                 ),
               ],
