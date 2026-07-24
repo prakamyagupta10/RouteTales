@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import '../services/geocoding_service.dart';
 
 import '../services/location_service.dart';
 
@@ -19,8 +20,9 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   final LocationService _locationService = LocationService();
-
+  final GeocodingService _geocodingService = GeocodingService();
   Position? currentPosition;
+  LatLng? destinationPosition;
   bool isLoading = true;
   String error = "";
 
@@ -32,10 +34,17 @@ class _MapPageState extends State<MapPage> {
 
   Future<void> getLocation() async {
     try {
+      // Get current location
       Position position = await _locationService.getCurrentLocation();
+
+      // Get destination coordinates
+      LatLng? destination = await _geocodingService.getCoordinates(
+        widget.destination,
+      );
 
       setState(() {
         currentPosition = position;
+        destinationPosition = destination;
         isLoading = false;
       });
     } catch (e) {
@@ -97,6 +106,7 @@ class _MapPageState extends State<MapPage> {
 
                 MarkerLayer(
                   markers: [
+                    // Current Location
                     Marker(
                       point: LatLng(
                         currentPosition!.latitude,
@@ -110,6 +120,19 @@ class _MapPageState extends State<MapPage> {
                         size: 45,
                       ),
                     ),
+
+                    // Destination
+                    if (destinationPosition != null)
+                      Marker(
+                        point: destinationPosition!,
+                        width: 80,
+                        height: 80,
+                        child: const Icon(
+                          Icons.flag,
+                          color: Colors.green,
+                          size: 40,
+                        ),
+                      ),
                   ],
                 ),
               ],
