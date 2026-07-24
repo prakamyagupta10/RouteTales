@@ -1,12 +1,12 @@
 import 'dart:convert';
-
+import '../models/route_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 import '../constants/api_keys.dart';
 
 class RouteService {
-  Future<List<LatLng>> getRoute(
+  Future<RouteModel> getRoute(
       LatLng start,
       LatLng end,
       ) async {
@@ -34,6 +34,9 @@ class RouteService {
       final coordinates =
       data["features"][0]["geometry"]["coordinates"];
 
+      final summary =
+      data["features"][0]["properties"]["segments"][0];
+
       List<LatLng> route = [];
 
       for (var point in coordinates) {
@@ -45,7 +48,11 @@ class RouteService {
         );
       }
 
-      return route;
+      return RouteModel(
+        points: route,
+        distance: summary["distance"].toDouble(),
+        duration: summary["duration"].toDouble(),
+      );
     } else {
       throw Exception("Failed to fetch route");
     }

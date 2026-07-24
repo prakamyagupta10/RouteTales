@@ -4,7 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/geocoding_service.dart';
 import '../services/route_service.dart';
-
+import '../models/route_model.dart';
 import '../services/location_service.dart';
 
 class MapPage extends StatefulWidget {
@@ -27,6 +27,8 @@ class _MapPageState extends State<MapPage> {
   LatLng? destinationPosition;
 
   List<LatLng> routePoints = [];
+  double distance = 0;
+  double duration = 0;
 
   final RouteService _routeService = RouteService();
   bool isLoading = true;
@@ -47,7 +49,7 @@ class _MapPageState extends State<MapPage> {
       LatLng? destination = await _geocodingService.getCoordinates(
         widget.destination,
       );
-      List<LatLng> route = [];
+      RouteModel? route;
 
       if (destination != null) {
         route = await _routeService.getRoute(
@@ -59,7 +61,9 @@ class _MapPageState extends State<MapPage> {
       setState(() {
         currentPosition = position;
         destinationPosition = destination;
-        routePoints = route;
+        routePoints = route?.points ?? [];
+        distance = route?.distance ?? 0;
+        duration = route?.duration ?? 0;
         isLoading = false;
       });
 
@@ -102,14 +106,31 @@ class _MapPageState extends State<MapPage> {
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(15),
+            padding: const EdgeInsets.all(16),
             color: Colors.blue.shade50,
-            child: Text(
-              "Destination: ${widget.destination}",
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "🏁 Destination: ${widget.destination}",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  "🚗 Distance: ${(distance / 1000).toStringAsFixed(1)} km",
+                  style: const TextStyle(fontSize: 16),
+                ),
+
+                Text(
+                  "🕒 ETA: ${(duration / 60).toStringAsFixed(0)} mins",
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ],
             ),
           ),
 
