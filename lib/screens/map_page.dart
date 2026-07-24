@@ -21,6 +21,7 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   final LocationService _locationService = LocationService();
   final GeocodingService _geocodingService = GeocodingService();
+  final MapController _mapController = MapController();
   Position? currentPosition;
   LatLng? destinationPosition;
   bool isLoading = true;
@@ -47,12 +48,34 @@ class _MapPageState extends State<MapPage> {
         destinationPosition = destination;
         isLoading = false;
       });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        fitMapToMarkers();
+      });
     } catch (e) {
       setState(() {
         error = e.toString();
         isLoading = false;
       });
     }
+  }
+  void fitMapToMarkers() {
+    if (currentPosition == null || destinationPosition == null) return;
+
+    final bounds = LatLngBounds(
+      LatLng(
+        currentPosition!.latitude,
+        currentPosition!.longitude,
+      ),
+      destinationPosition!,
+    );
+
+    _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: bounds,
+        padding: const EdgeInsets.all(60),
+      ),
+    );
   }
 
   @override
@@ -89,6 +112,7 @@ class _MapPageState extends State<MapPage> {
               ),
             )
                 : FlutterMap(
+              mapController: _mapController,
               options: MapOptions(
                 initialCenter: LatLng(
                   currentPosition!.latitude,
